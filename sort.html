@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimic | Pro Organizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f1113;
+            --card-bg: #16191c;
+            --accent: #00d1b2;
+            --text-main: #f5f5f5;
+            --text-dim: #9ca3af;
+            --border: #2d3339;
+            --input-bg: #0a0c0e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        header { text-align: center; margin-bottom: 24px; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+        
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        label { font-size: 0.65rem; text-transform: uppercase; font-weight: 800; color: var(--text-dim); display: block; margin-bottom: 6px; letter-spacing: 0.05em; }
+        
+        input[type="text"] {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            color: var(--accent);
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+
+        /* Tie Toggle Styling */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #111;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .toggle-text { font-size: 0.8rem; font-weight: 600; color: var(--text-main); }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(255, 255, 255, 0.01);
+            color: var(--text-dim);
+        }
+
+        .drop-zone:hover { border-color: var(--accent); background: rgba(0, 209, 178, 0.03); }
+
+        .result-section { display: none; }
+        
+        .result-card {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .variant-stack { display: grid; gap: 8px; }
+
+        .name-box {
+            background: #111;
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .name-box:hover { border-color: #444; background: #181818; }
+
+        .badge {
+            font-size: 0.6rem;
+            background: var(--border);
+            color: var(--text-dim);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>Mimic Organizer</h2>
+        <p style="color:var(--text-dim); font-size:0.8rem; margin:4px 0 0 0;">Search Engine Optimized Naming</p>
+    </header>
+
+    <div class="input-row">
+        <div class="input-group">
+            <label>Client</label>
+            <input type="text" id="client" placeholder="Client Name" list="client-list" autocomplete="off">
+            <datalist id="client-list"></datalist>
+        </div>
+        <div class="input-group">
+            <label>Sub Category</label>
+            <input type="text" id="sub" placeholder="e.g. Socials">
+        </div>
+    </div>
+
+    <div class="toggle-row">
+        <span class="toggle-text">Tie Sponsor Variants</span>
+        <label class="switch">
+            <input type="checkbox" id="tieToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        <span id="label">Drop Final Master Here</span>
+        <input type="file" id="fileInput" style="display:none">
+    </div>
+
+    <div class="result-section" id="resultSection">
+        <div class="result-card">
+            <label>Folder Name</label>
+            <div class="name-box" id="outFolder" style="color:var(--text-main)"></div>
+        </div>
+
+        <label id="listLabel">File Name</label>
+        <div class="variant-stack" id="variantStack"></div>
+    </div>
+</div>
+
+<script src="sort.js"></script>
+</body>
+</html>
