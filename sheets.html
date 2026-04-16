@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mimic | Reel Formatter</title>
+    <title>Mimic | Universal Series Formatter</title>
     <style>
         :root {
             --bg: #0f1113;
@@ -13,6 +13,7 @@
             --text-dim: #9ca3af;
             --border: #2d3339;
             --input-bg: #0a0c0e;
+            --recipe-color: #ffca00;
         }
 
         body {
@@ -23,7 +24,7 @@
             margin: 0;
         }
 
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1300px; margin: 0 auto; }
         
         header { margin-bottom: 30px; }
         h1 { color: var(--accent); font-size: 1.8rem; margin: 0; letter-spacing: -0.04em; }
@@ -37,7 +38,7 @@
             outline: none; box-sizing: border-box;
         }
 
-        .btn-group { margin-top: 15px; display: flex; gap: 10px; }
+        .btn-group { margin-top: 15px; display: flex; align-items: center; gap: 15px; }
         
         button { 
             background: var(--accent); color: #000; border: none; 
@@ -56,138 +57,31 @@
             background: var(--card-bg);
         }
 
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th, td { border-bottom: 1px solid var(--border); padding: 12px; text-align: left; }
         th { background: #1a1d21; color: var(--text-dim); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; }
         
-        .copy-success { color: #00ff00; font-size: 0.8rem; margin-left: 15px; display: none; }
-        .back-link { display: inline-block; margin-top: 20px; color: var(--text-dim); text-decoration: none; font-size: 0.8rem; }
+        .tag-series { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .tag-recipe { color: #ffca00; font-weight: bold; }
+        .title-text { color: var(--accent); font-weight: 600; }
+
+        #recipe-count { color: var(--recipe-color); font-weight: bold; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div class="script-library">
-    <div class="library-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div class="status-dot" style="background:#ffca00;"></div>
-            <h3 style="margin:0; font-size: 1rem;">Scraper Script Library</h3>
-        </div>
-        <button class="copy-script-btn" onclick="copyScraperScript()">Copy Scraper Code</button>
-    </div>
-    <div class="instructions">
-        <ol>
-            <li>Open Instagram Reels on Desktop and press <strong>F12</strong>.</li>
-            <li>Paste the copied script into the <strong>Console</strong> and hit Enter.</li>
-            <li>To stop: type <code>window.stopScrape = true</code> in the console.</li>
-            <li>The script will auto-copy the JSON. Paste it in the box below!</li>
-        </ol>
-    </div>
-</div>
-
-<style>
-    .script-library {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-    }
-
-    .library-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .copy-script-btn {
-        background: transparent;
-        border: 1px solid var(--accent);
-        color: var(--accent);
-        font-size: 0.7rem;
-        padding: 6px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        text-transform: uppercase;
-        font-weight: 800;
-        transition: 0.2s;
-    }
-
-    .copy-script-btn:hover {
-        background: var(--accent);
-        color: #000;
-    }
-
-    .instructions {
-        font-size: 0.8rem;
-        color: var(--text-dim);
-        line-height: 1.6;
-    }
-
-    .instructions code {
-        background: #000;
-        color: #ffca00;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: monospace;
-    }
-    
-    .instructions ol { padding-left: 20px; margin: 0; }
-</style>
-
-<script>
-    function copyScraperScript() {
-        const scraperCode = `window.stopScrape = false;
-(async () => {
-    const data = [];
-    const delay = 4500; 
-    console.log("%c🚀 Continuous Scraper Active.", "color: #00f2ff; font-weight: bold;");
-    let i = 0;
-    while (!window.stopScrape) {
-        i++;
-        const captionNode = document.querySelector('h1._ap3a._aaco._aacu._aacx._aad7._aade');
-        const userNode = document.querySelector('h2 a, .xt0psk2 a, a.x1i10hfl[role="link"]');
-        const timeNode = document.querySelector('time');
-        const currentLink = window.location.href.split('?')[0];
-        data.push({
-            index: i,
-            user: userNode ? userNode.innerText.trim() : "N/A",
-            link: currentLink,
-            caption: captionNode ? captionNode.innerText.trim().replace(/\\n/g, ' ') : "No Caption",
-            posted_at: timeNode ? timeNode.getAttribute('datetime') : "N/A"
-        });
-        const nextBtn = document.querySelector('button[aria-label="Next"]') || document.querySelector('svg[aria-label="Next"]')?.closest('button');
-        if (nextBtn) {
-            nextBtn.click();
-            await new Promise(r => setTimeout(r, delay));
-        } else { break; }
-    }
-    console.table(data);
-    copy(JSON.stringify(data, null, 2));
-    alert("Scraping finished. Data copied to clipboard!");
-})();`;
-
-        const el = document.createElement('textarea');
-        el.value = scraperCode;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        alert("Scraper script copied to clipboard!");
-    }
-</script>
 
 <div class="container">
     <header>
-        <h1>Reel Data Formatter</h1>
-        <p>Paste the JSON output from your Instagram console script below.</p>
+        <h1>Universal Recipe Formatter</h1>
+        <p>Works for <strong>TikTok & Instagram</strong> exports. Filters recipes and sorts into series.</p>
     </header>
     
-    <textarea id="inputData" placeholder="[ { 'index': 1, 'user': 'name', ... } ]"></textarea>
+    <textarea id="inputData" placeholder="Paste JSON data from TikTok or Instagram export here..."></textarea>
     
     <div class="btn-group">
-        <button onclick="formatData()">Process Data</button>
-        <button id="copyBtn" style="background: #ffca00; display:none;" onclick="copyToClipboard()">Copy for Sheets</button>
-        <span id="copyMsg" class="copy-success">✔ Data ready for Google Sheets!</span>
+        <button onclick="formatData()">1. Process Data</button>
+        <button id="copyBtn" style="background: #ffca00; display:none;" onclick="copyRecipesOnly()">2. Copy Recipes for Google Sheets</button>
+        <span id="recipe-count"></span>
     </div>
 
     <div id="output-container">
@@ -196,80 +90,125 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>User</th>
+                        <th>Series</th>
+                        <th>Title</th>
                         <th>Link</th>
-                        <th>Caption</th>
-                        <th>Date</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
-    
-    <a href="index.html" class="back-link">← Back to Dashboard</a>
 </div>
 
 <script>
+    const foodKeywords = ['recipe', 'curry', 'oil', 'salt', 'ingredients', 'cook', 'boiled', 'taste', 'mashed', 'prawn', 'potato', 'mustard', 'sugar', 'paste', 'coconut', 'milk', 'tarka', 'dal', 'roti', 'paratha', 'masala'];
+
+    function getSeries(caption) {
+        const text = caption.toLowerCase();
+        if (text.includes('indian 101')) {
+            if (text.includes('bread series')) return "Indian 101: Bread Series";
+            if (text.includes('west india')) return "Indian 101: West";
+            if (text.includes('south india')) return "Indian 101: South";
+            if (text.includes('east india')) return "Indian 101: East";
+            if (text.includes('north india')) return "Indian 101: North";
+            return "Indian 101";
+        }
+        if (text.includes('simply sri lankan') || text.includes('simply srilankan')) return "Simply Sri Lankan";
+        if (text.includes('diwali made simple')) return "Diwali Made Simple";
+        if (text.includes('quick christmas')) return "Quick Christmas";
+        return "Etc";
+    }
+
+    function getTitle(text) {
+        // Matches first line or first sentence
+        const match = text.match(/^.*?[.!?](\s|$)|^[^\n]+/);
+        return match ? match[0].trim() : text.trim();
+    }
+
     function formatData() {
         const raw = document.getElementById('inputData').value;
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
+        let count = 0;
         
         try {
             const data = JSON.parse(raw);
-            
             data.forEach(item => {
-                let formattedDate = item.posted_at;
-                if(item.posted_at !== "N/A") {
-                    const d = new Date(item.posted_at);
-                    formattedDate = d.toISOString().split('T')[0] + " " + d.toTimeString().split(' ')[0];
-                }
+                const isRecipe = foodKeywords.some(word => item.caption.toLowerCase().includes(word));
+                if(isRecipe) count++;
+
+                const seriesName = getSeries(item.caption);
+                const title = getTitle(item.caption);
 
                 const row = `<tr>
                     <td>${item.index}</td>
-                    <td>${item.user}</td>
+                    <td><span class="tag-series">${seriesName}</span></td>
+                    <td class="title-text">${title}</td>
                     <td><a href="${item.link}" target="_blank" style="color:var(--accent)">Link</a></td>
-                    <td>${item.caption.substring(0, 80)}...</td>
-                    <td>${formattedDate}</td>
+                    <td class="${isRecipe ? 'tag-recipe' : ''}">${isRecipe ? '✔ Recipe' : '—'}</td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
 
             document.getElementById('output-container').style.display = 'block';
             document.getElementById('copyBtn').style.display = 'inline-block';
+            document.getElementById('recipe-count').innerText = `Total Recipes Found: ${count}`;
         } catch (e) {
-            alert("Invalid JSON format. Please make sure you copied the full array from the console.");
+            alert("Error: Invalid JSON format. Please paste the full text from your export file.");
         }
     }
 
-    function copyToClipboard() {
+    function copyRecipesOnly() {
         const raw = document.getElementById('inputData').value;
-        const data = JSON.parse(raw);
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch(e) { return; }
         
-        // Header for Google Sheets
-        let tsv = "Index\tUser\tLink\tCaption\tDate\n";
+        // This creates the header and the data rows separated by tabs (\t)
+        // This is the format Google Sheets expects to create columns.
+        let tsv = "Index\tSeries\tTitle\tLink\tFull Caption\tScraped Date\n";
+        let copiedCount = 0;
         
         data.forEach(item => {
-            const row = [
-                item.index,
-                item.user,
-                item.link,
-                item.caption,
-                item.posted_at
-            ].map(val => `"${val.toString().replace(/"/g, '""')}"`).join('\t');
-            tsv += row + '\n';
+            const isRecipe = foodKeywords.some(word => item.caption.toLowerCase().includes(word));
+            
+            if (isRecipe) {
+                const seriesName = getSeries(item.caption);
+                const title = getTitle(item.caption);
+                
+                // Clean values for TSV (removing extra newlines and tabs from inside text)
+                const clean = (val) => val ? val.toString().replace(/\t/g, " ").replace(/\n/g, " ").replace(/"/g, '""') : "";
+
+                const row = [
+                    item.index,
+                    seriesName,
+                    title,
+                    item.link,
+                    clean(item.caption),
+                    item.posted_at || item.scraped_at || "N/A"
+                ].join('\t');
+                
+                tsv += row + '\n';
+                copiedCount++;
+            }
         });
 
-        const el = document.createElement('textarea');
-        el.value = tsv;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        
-        document.getElementById('copyMsg').style.display = 'inline';
-        setTimeout(() => { document.getElementById('copyMsg').style.display = 'none'; }, 3000);
+        // Use the modern Clipboard API
+        navigator.clipboard.writeText(tsv).then(() => {
+            alert(`Copied ${copiedCount} recipes! Go to Google Sheets and press Ctrl+V (or Cmd+V).`);
+        }).catch(err => {
+            // Fallback for older browsers
+            const el = document.createElement('textarea');
+            el.value = tsv;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert(`Copied ${copiedCount} recipes!`);
+        });
     }
 </script>
 
