@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Bamba Winner Picker</title>
+    <style>
+        :root {
+            --primary: #ef4444; /* La Bamba Red */
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #10b981;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wrapper {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #94a3b8; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            padding: 12px;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+        .controls { display: flex; gap: 15px; margin: 25px 0; }
+        button { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .btn-pick { background: var(--primary); color: white; }
+        .btn-copy { background: var(--accent); color: white; display: none; }
+        .winner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .winner-item {
+            padding: 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .platform-tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .tag-insta { background: #d62976; color: white; }
+        .tag-fb { background: #1877f2; color: white; }
+        .tag-both { background: #8b5cf6; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h1>💃 La Bamba Winner Picker</h1>
+    <p style="text-align:center; color:#94a3b8;">Deduplicated platform filtering for 40 winners</p>
+
+    <div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--primary);">
+        <label style="color: var(--primary);">Excluded User:</label>
+        <code style="color:white;">cityofdreams.events</code>
+    </div>
+
+    <div class="input-group">
+        <label>Facebook JSON:</label>
+        <textarea id="fbInput" placeholder="Paste FB data here..."></textarea>
+    </div>
+
+    <div class="input-group">
+        <label>Instagram JSON:</label>
+        <textarea id="instaInput" placeholder="Paste Insta names here..."></textarea>
+    </div>
+
+    <div class="controls">
+        <button class="btn-pick" onclick="runGiveaway(40)">Find 40 Unique Winners</button>
+        <button id="copyBtn" class="btn-copy" onclick="copyToSheets()">Copy Table for Sheets</button>
+    </div>
+
+    <div id="resultsArea" style="display:none;">
+        <div class="winner-grid" id="winnerList"></div>
+    </div>
+</div>
+
+<script>
+let winnersData = [];
+
+function runGiveaway(targetCount) {
+    const fbRaw = document.getElementById('fbInput').value;
+    const instaRaw = document.getElementById('instaInput').value;
+    const blacklist = ["cityofdreams.events","shehanmalinthafernando"];
+    
+    let userMap = new Map(); // Using Map to track platform source
+
+    try {
+        // Process Instagram (Primary platform for your message)
+        if (instaRaw.trim()) {
+            JSON.parse(instaRaw).forEach(item => {
+                let name = item.username.toLowerCase().trim();
+                if (!blacklist.includes(name)) {
+                    userMap.set(name, { original: item.username, platform: "Instagram" });
+                }
+            });
+        }
+
+        // Process Facebook (Deduplicate against Insta)
+        if (fbRaw.trim()) {
+            JSON.parse(fbRaw).forEach(item => {
+                let rawName = item.user || item.username;
+                let name = rawName.toLowerCase().trim();
+                if (!blacklist.includes(name)) {
+                    if (userMap.has(name)) {
+                        userMap.get(name).platform = "Both Platforms";
+                    } else {
+                        userMap.set(name, { original: rawName, platform: "Facebook" });
+                    }
+                }
+            });
+        }
+
+        let allUsers = Array.from(userMap.values());
+        if (allUsers.length === 0) return alert("No users found.");
+
+        // Randomize
+        const shuffled = allUsers.sort(() => 0.5 - Math.random());
+        winnersData = shuffled.slice(0, Math.min(targetCount, allUsers.length));
+
+        // Render
+        const listDiv = document.getElementById('winnerList');
+        listDiv.innerHTML = winnersData.map((w, i) => `
+            <div class="winner-item">
+                <span><strong style="color:var(--primary)">#${i+1}</strong> ${w.original}</span>
+                <span class="platform-tag ${w.platform === 'Instagram' ? 'tag-insta' : w.platform === 'Facebook' ? 'tag-fb' : 'tag-both'}">
+                    ${w.platform}
+                </span>
+            </div>
+        `).join('');
+
+        document.getElementById('resultsArea').style.display = 'block';
+        document.getElementById('copyBtn').style.display = 'inline-block';
+
+    } catch (e) {
+        alert("JSON format error. Please check your data.");
+    }
+}
+
+function copyToSheets() {
+    // Column format: Name | Platform
+    const rows = winnersData.map(w => `${w.original}\t${w.platform}`);
+    const header = "Winner Name\tSource Platform\n";
+    const blob = new Blob([header + rows.join('\n')], { type: 'text/plain' });
+    
+    const el = document.createElement('textarea');
+    el.value = header + rows.join('\n');
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert("Copied! Paste into Google Sheets to see names and their platforms in two columns.");
+}
+</script>
+
+</body>
+</html>

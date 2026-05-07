@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Photo Sorter Pro + Undo</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f0f; color: #ececec; text-align: center; display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
+        #viewer { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: #000; position: relative; }
+        img { max-height: 85vh; max-width: 90vw; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.8); object-fit: contain; }
+        #controls { background: #181818; padding: 15px; border-top: 1px solid #333; display: flex; flex-direction: column; align-items: center; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.95); }
+        .on-stage { background: #2563eb; color: white; }
+        .off-stage { background: #059669; color: white; }
+        .bts { background: #d97706; color: white; }
+        .good { background: #7c3aed; color: white; }
+        .undo { background: #4b5563; color: white; }
+        kbd { background: #333; padding: 2px 5px; border-radius: 3px; border: 1px solid #555; font-size: 0.8em; }
+        #status { font-size: 0.9em; color: #aaa; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" style="padding: 100px;">
+        <h1>📸 Photo Sorter</h1>
+        <p>This tool works in <b>Chrome</b> or <b>Edge</b>.</p>
+        <button class="btn on-stage" onclick="initSource()">Select Photo Folder</button>
+    </div>
+
+    <div id="app" style="display:none;">
+        <div id="viewer">
+            <img id="current-img" src="" alt="Loading...">
+        </div>
+        <div id="controls">
+            <div class="btn-group">
+                <button class="btn on-stage" onclick="sort('on stage')">On Stage <kbd>1</kbd></button>
+                <button class="btn off-stage" onclick="sort('off stage')">Off Stage <kbd>2</kbd></button>
+                <button class="btn bts" onclick="sort('bts')">BTS <kbd>3</kbd></button>
+                <button class="btn good" onclick="sort('goodstuff')">Goodstuff <kbd>4</kbd></button>
+                <button class="btn undo" onclick="undo()">Undo Last <kbd>Z</kbd></button>
+            </div>
+            <div id="status">File: -- | Space to skip</div>
+        </div>
+    </div>
+
+<script>
+    let sourceHandle;
+    let images = [];
+    let currentIndex = 0;
+    let lastAction = null; // Stores { fileName, folderName } for undo
+
+    async function initSource() {
+        try {
+            sourceHandle = await window.showDirectoryPicker();
+            for await (const entry of sourceHandle.values()) {
+                if (entry.kind === 'file' && /\.(jpe?g|png|webp|gif|bmp)$/i.test(entry.name)) {
+                    images.push(entry);
+                }
+            }
+            if (images.length > 0) {
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                showImage();
+            }
+        } catch (err) {
+            alert("Error: " + err.message + "\nMake sure you are using Chrome/Edge and serving this via localhost.");
+        }
+    }
+
+    async function showImage() {
+        if (currentIndex >= images.length) {
+            document.getElementById('status').innerText = "🎉 All photos sorted!";
+            return;
+        }
+        const file = await images[currentIndex].getFile();
+        const url = URL.createObjectURL(file);
+        const img = document.getElementById('current-img');
+        
+        // Clean up memory from previous URL
+        if (img.src) URL.revokeObjectURL(img.src);
+        
+        img.src = url;
+        document.getElementById('status').innerText = `[${currentIndex + 1}/${images.length}] - ${images[currentIndex].name}`;
+    }
+
+    async function sort(folderName) {
+        const entry = images[currentIndex];
+        try {
+            const targetFolder = await sourceHandle.getDirectoryHandle(folderName, { create: true });
+            const newFileHandle = await targetFolder.getFileHandle(entry.name, { create: true });
+            const writable = await newFileHandle.createWritable();
+            await writable.write(await entry.getFile());
+            await writable.close();
+
+            // Track for undo
+            lastAction = { fileName: entry.name, folderName: folderName };
+            
+            currentIndex++;
+            showImage();
+        } catch (e) {
+            console.error("Sorting failed", e);
+        }
+    }
+
+    async function undo() {
+        if (!lastAction || currentIndex === 0) return;
+
+        try {
+            // 1. Get the folder we just copied to
+            const targetFolder = await sourceHandle.getDirectoryHandle(lastAction.folderName);
+            // 2. Remove that copy
+            await targetFolder.removeEntry(lastAction.fileName);
+            
+            // 3. Go back one image
+            currentIndex--;
+            lastAction = null; // Only one level of undo for simplicity
+            showImage();
+            console.log("Undo successful: Copy removed.");
+        } catch (e) {
+            console.warn("Nothing to undo or file already gone.");
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '1') sort('on stage');
+        if (e.key === '2') sort('off stage');
+        if (e.key === '3') sort('bts');
+        if (e.key === '4') sort('goodstuff');
+        if (e.key.toLowerCase() === 'z') undo();
+        if (e.key === ' ') { currentIndex++; showImage(); }
+    });
+</script>
+</body>
+</html>

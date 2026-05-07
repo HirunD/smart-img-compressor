@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mimic | Universal Series Formatter</title>
+    <title>Mimic | Series Formatter</title>
     <style>
         :root {
             --bg: #0f1113;
@@ -38,7 +38,7 @@
             outline: none; box-sizing: border-box;
         }
 
-        .btn-group { margin-top: 15px; display: flex; align-items: center; gap: 15px; }
+        .btn-group { margin-top: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         
         button { 
             background: var(--accent); color: #000; border: none; 
@@ -47,6 +47,8 @@
         }
         
         button:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .btn-master { background: #555; color: #fff; }
 
         #output-container { margin-top: 40px; display: none; }
         
@@ -65,22 +67,26 @@
         .tag-recipe { color: #ffca00; font-weight: bold; }
         .title-text { color: var(--accent); font-weight: 600; }
 
-        #recipe-count { color: var(--recipe-color); font-weight: bold; font-size: 0.9rem; }
+        #recipe-count { color: var(--recipe-color); font-weight: bold; font-size: 0.9rem; margin-left: auto;}
+        
+        .back-link { display: block; margin-top: 30px; color: var(--text-dim); text-decoration: none; font-size: 0.8rem; }
+        .back-link:hover { color: var(--accent); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Universal Recipe Formatter</h1>
-        <p>Works for <strong>TikTok & Instagram</strong> exports. Filters recipes and sorts into series.</p>
+        <h1>Universal Series Formatter</h1>
+        <p>Filters recipes and sorts into series for <strong>TikTok & Instagram</strong> exports.</p>
     </header>
     
-    <textarea id="inputData" placeholder="Paste JSON data from TikTok or Instagram export here..."></textarea>
+    <textarea id="inputData" placeholder="Paste JSON data here..."></textarea>
     
     <div class="btn-group">
         <button onclick="formatData()">1. Process Data</button>
-        <button id="copyBtn" style="background: #ffca00; display:none;" onclick="copyRecipesOnly()">2. Copy Recipes for Google Sheets</button>
+        <button id="copyRecipesBtn" style="background: #ffca00; display:none;" onclick="copyData(true)">2. Copy Recipes Only</button>
+        <button id="copyMasterBtn" class="btn-master" style="display:none;" onclick="copyData(false)">3. Copy Master List</button>
         <span id="recipe-count"></span>
     </div>
 
@@ -100,6 +106,8 @@
             </table>
         </div>
     </div>
+    
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
 </div>
 
 <script>
@@ -122,7 +130,6 @@
     }
 
     function getTitle(text) {
-        // Matches first line or first sentence
         const match = text.match(/^.*?[.!?](\s|$)|^[^\n]+/);
         return match ? match[0].trim() : text.trim();
     }
@@ -153,33 +160,33 @@
             });
 
             document.getElementById('output-container').style.display = 'block';
-            document.getElementById('copyBtn').style.display = 'inline-block';
-            document.getElementById('recipe-count').innerText = `Total Recipes Found: ${count}`;
+            document.getElementById('copyRecipesBtn').style.display = 'inline-block';
+            document.getElementById('copyMasterBtn').style.display = 'inline-block';
+            document.getElementById('recipe-count').innerText = `Recipes: ${count} / Total: ${data.length}`;
         } catch (e) {
-            alert("Error: Invalid JSON format. Please paste the full text from your export file.");
+            alert("Error: Invalid JSON format.");
         }
     }
 
-    function copyRecipesOnly() {
+    function copyData(recipesOnly = true) {
         const raw = document.getElementById('inputData').value;
         let data;
         try {
             data = JSON.parse(raw);
         } catch(e) { return; }
         
-        // This creates the header and the data rows separated by tabs (\t)
-        // This is the format Google Sheets expects to create columns.
-        let tsv = "Index\tSeries\tTitle\tLink\tFull Caption\tScraped Date\n";
+        let tsv = "Index\tSeries\tTitle\tLink\tFull Caption\tStatus\tScraped Date\n";
         let copiedCount = 0;
         
         data.forEach(item => {
             const isRecipe = foodKeywords.some(word => item.caption.toLowerCase().includes(word));
             
-            if (isRecipe) {
+            // If recipesOnly is true, we filter. If false (Master), we take everything.
+            if (!recipesOnly || isRecipe) {
                 const seriesName = getSeries(item.caption);
                 const title = getTitle(item.caption);
+                const status = isRecipe ? "Recipe" : "Generic";
                 
-                // Clean values for TSV (removing extra newlines and tabs from inside text)
                 const clean = (val) => val ? val.toString().replace(/\t/g, " ").replace(/\n/g, " ").replace(/"/g, '""') : "";
 
                 const row = [
@@ -188,6 +195,7 @@
                     title,
                     item.link,
                     clean(item.caption),
+                    status,
                     item.posted_at || item.scraped_at || "N/A"
                 ].join('\t');
                 
@@ -196,18 +204,8 @@
             }
         });
 
-        // Use the modern Clipboard API
         navigator.clipboard.writeText(tsv).then(() => {
-            alert(`Copied ${copiedCount} recipes! Go to Google Sheets and press Ctrl+V (or Cmd+V).`);
-        }).catch(err => {
-            // Fallback for older browsers
-            const el = document.createElement('textarea');
-            el.value = tsv;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert(`Copied ${copiedCount} recipes!`);
+            alert(`Copied ${copiedCount} rows to clipboard!`);
         });
     }
 </script>

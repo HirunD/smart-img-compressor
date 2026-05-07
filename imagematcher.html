@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAW & JPG Matcher</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; line-height: 1.6; color: #333; max-width: 800px; margin: auto; }
+        .container { border: 2px dashed #ccc; padding: 20px; border-radius: 8px; text-align: center; }
+        button { background: #007AFF; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px; }
+        button:disabled { background: #ccc; }
+        #log { margin-top: 20px; text-align: left; max-height: 300px; overflow-y: auto; background: #f4f4f4; padding: 10px; font-size: 12px; }
+        .status { font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>RAW Matcher</h2>
+    <p>Select your <b>JPG folder</b> and your <b>RAW folder</b>. The tool will find matching NEF files and copy them to a destination of your choice.</p>
+
+    <div class="container">
+        <button id="btnJpg">1. Select JPG Folder</button>
+        <button id="btnRaw">2. Select RAW Folder</button>
+        <br>
+        <button id="btnProcess" disabled style="background: #28a745;">3. Match & Save NEFs</button>
+        <div class="status" id="status">Ready</div>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+        let jpgHandles = [];
+        let rawHandles = [];
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+
+        async function getFilesFromDirectory(handle, extension) {
+            const files = [];
+            for await (const entry of handle.values()) {
+                if (entry.kind === 'file' && entry.name.toLowerCase().endsWith(extension)) {
+                    files.push(entry);
+                }
+            }
+            return files;
+        }
+
+        document.getElementById('btnJpg').addEventListener('click', async () => {
+            const handle = await window.showDirectoryPicker();
+            jpgHandles = await getFilesFromDirectory(handle, '.jpg');
+            statusEl.innerText = `Found ${jpgHandles.length} JPGs`;
+            logEl.innerHTML += `Loaded ${jpgHandles.length} JPG files.<br>`;
+        });
+
+        document.getElementById('btnRaw').addEventListener('click', async () => {
+            const handle = await window.showDirectoryPicker();
+            rawHandles = await getFilesFromDirectory(handle, '.nef');
+            statusEl.innerText = `Found ${rawHandles.length} RAWs`;
+            logEl.innerHTML += `Loaded ${rawHandles.length} NEF files.<br>`;
+            if (jpgHandles.length > 0) document.getElementById('btnProcess').disabled = false;
+        });
+
+        document.getElementById('btnProcess').addEventListener('click', async () => {
+            statusEl.innerText = "Selecting output folder...";
+            const outHandle = await window.showDirectoryPicker();
+            
+            let matchedCount = 0;
+            const jpgNames = new Set(jpgHandles.map(f => f.name.toLowerCase().replace('.jpg', '')));
+
+            for (const rawFile of rawHandles) {
+                const rawBaseName = rawFile.name.toLowerCase().replace('.nef', '');
+                
+                if (jpgNames.has(rawBaseName)) {
+                    statusEl.innerText = `Copying ${rawFile.name}...`;
+                    
+                    // Read RAW file
+                    const fileData = await rawFile.getFile();
+                    
+                    // Create new file in destination
+                    const newFileHandle = await outHandle.getFileHandle(rawFile.name, { create: true });
+                    const writable = await newFileHandle.createWritable();
+                    await writable.write(fileData);
+                    await writable.close();
+                    
+                    logEl.innerHTML += `Matched and Copied: ${rawFile.name}<br>`;
+                    matchedCount++;
+                }
+            }
+
+            statusEl.innerText = `Complete! ${matchedCount} files copied.`;
+            alert(`Process finished. ${matchedCount} RAW files saved.`);
+        });
+    </script>
+</body>
+</html>

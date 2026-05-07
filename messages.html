@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winner Profile Opener</title>
+    <style>
+        :root {
+            --primary: #ef4444;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --insta: #d62976;
+            --sent: #10b981;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wrapper {
+            max-width: 800px;
+            width: 100%;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        h1 { text-align: center; color: var(--primary); margin: 0 0 20px 0; }
+        
+        .template-box {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 25px;
+        }
+        pre { white-space: pre-wrap; font-size: 0.85rem; margin-bottom: 15px; color: #cbd5e1; }
+        
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.3s ease;
+        }
+        .btn-copy { background: var(--sent); color: white; margin-bottom: 10px; }
+        .btn-generate { background: var(--primary); color: white; width: 100%; }
+        
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            display: none;
+        }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
+        
+        .btn-profile { 
+            background: #6366f1; /* Indigo for profile */
+            color: white; 
+            font-size: 0.75rem;
+            padding: 8px 16px;
+        }
+        .btn-profile.sent { 
+            background: var(--sent) !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h1>🎟️ Profile Dispatcher</h1>
+
+    <div class="template-box">
+        <label style="color: var(--primary); font-weight: bold;">Message Template:</label>
+        <pre id="msgText">Hey there, congratulations 🎉
+
+You’ve been selected as one of our La Bamba giveaway winners , and we’re so excited to have you with us! 🥳
+
+You’ll be receiving 2 tickets for you and a friend 💃✨
+
+To confirm your spot, simply send us your:
+•⁠  ⁠Full Name
+•⁠  ⁠Email Address
+•⁠  ⁠Contact Number
+•⁠  ⁠Name of your plus 1 (This ticket will not be transferable)
+
+within 24 hours.
+
+See you at La Bamba ❤️</pre>
+        <button class="btn-copy" onclick="copyMsg()">Copy Message Text</button>
+    </div>
+
+    <label style="display:block; margin-bottom:8px; font-weight:bold;">Paste Usernames or Links from Sheets:</label>
+    <textarea id="sheetInput" placeholder="Paste names or profile links here..."></textarea>
+    <button class="btn-generate" onclick="generateLinks()">Generate Profile List</button>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+function copyMsg() {
+    const text = document.getElementById('msgText').innerText;
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert("Message copied!");
+}
+
+function generateLinks() {
+    const input = document.getElementById('sheetInput').value;
+    const lines = input.split(/\r?\n/);
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    let count = 0;
+    lines.forEach(line => {
+        let raw = line.trim();
+        if (raw) {
+            // Cleans the input if it's a link or an ID path
+            let cleanUser = raw.split('/').filter(part => part).pop(); 
+            count++;
+            const row = `<tr>
+                <td>${count}</td>
+                <td><strong>${cleanUser}</strong></td>
+                <td>
+                    <button class="btn-profile" onclick="openProfile('${cleanUser}', this)">Open Profile</button>
+                </td>
+            </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+        }
+    });
+
+    if (count > 0) document.getElementById('resultTable').style.display = 'table';
+}
+
+function openProfile(user, btn) {
+    btn.classList.add('sent');
+    btn.innerText = "Opened ✅";
+    
+    // This opens the main Profile page
+    window.open(`https://www.instagram.com/${user}/`, '_blank');
+}
+</script>
+
+</body>
+</html>
